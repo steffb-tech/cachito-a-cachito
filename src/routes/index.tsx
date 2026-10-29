@@ -1,24 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useGame } from "@/lib/game";
+import { Door } from "@/components/taller/Door";
+import { Workshop } from "@/components/taller/Workshop";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Cachito a Cachito" },
+      { name: "description", content: "Un taller con mucha miga." },
+      { property: "og:title", content: "Cachito a Cachito" },
+      { property: "og:description", content: "Un taller con mucha miga." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
+  const { state, enter, goTo, find, markSeen, reset } = useGame();
+  if (!state) return <div className="pegboard min-h-dvh" />;
+  if (!state.entered) return <Door onEnter={enter} onReset={reset} />;
+  return <Workshop state={state} goTo={goTo} find={find} markSeen={markSeen} reset={reset} />;
 }
