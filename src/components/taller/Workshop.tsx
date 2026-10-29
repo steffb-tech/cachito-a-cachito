@@ -201,7 +201,7 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
             {/* pila de libros */}
             <Tap label={manual.titulo} onClick={() => setModal("manual")} className="flex flex-col items-center gap-0.5">
               <div className="h-4 w-[80%] rounded-sm bg-sage-dark" />
-              <div className="font-hand flex h-6 w-full items-center justify-center rounded-sm bg-thread/80 text-sm text-primary-foreground">{manual.titulo}</div>
+              <div className="font-hand flex h-6 w-full items-center justify-center rounded-sm bg-wood-dark text-sm text-primary-foreground">{manual.titulo}</div>
               <div className="h-5 w-[90%] rounded-sm bg-kraft" />
             </Tap>
           </div>
