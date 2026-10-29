@@ -14,7 +14,7 @@ export function randomError() {
   let i = Math.floor(Math.random() * errores.length);
   if (errores.length > 1) while (i === lastError) i = Math.floor(Math.random() * errores.length);
   lastError = i;
-  return errores[i];
+  return errores[i] ?? "";
 }
 
 export function stepIndexOf(id: string) {
@@ -61,7 +61,7 @@ export function useGame() {
       update((s) => ({
         ...s,
         step: idx,
-        opened: [...s.opened, ...pasos[idx].sobres.filter((l) => !s.opened.includes(l))],
+        opened: [...s.opened, ...(pasos[idx]?.sobres ?? []).filter((l) => !s.opened.includes(l))],
       })),
     [update],
   );

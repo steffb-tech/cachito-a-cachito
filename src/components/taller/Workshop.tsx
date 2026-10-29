@@ -35,7 +35,7 @@ function playlistEmbed(url: string) {
 }
 
 export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
-  const paso = pasos[state.step];
+  const paso = pasos[Math.min(state.step, pasos.length - 1)]!;
   const [modal, setModal] = useState<null | "cuaderno" | "manual" | "radio" | "nota" | "item">(null);
   const [nota, setNota] = useState("");
   const [item, setItem] = useState<ItemTablon | null>(null);
@@ -268,7 +268,7 @@ function HiloRojo({ onPull }: { onPull: () => void }) {
 }
 
 function Cuacfesionario({ state, goTo, reset, onBrioche }: { state: GameState; goTo: (i: number) => void; reset: () => void; onBrioche: () => void }) {
-  const paso = pasos[state.step];
+  const paso = pasos[Math.min(state.step, pasos.length - 1)]!;
   const next = pasos[state.step + 1];
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
