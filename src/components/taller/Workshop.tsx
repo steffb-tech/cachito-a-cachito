@@ -113,7 +113,7 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
 
         {/* cordel con letras de sobres */}
         {state.opened.length > 0 && (
-          <div className="absolute left-[30%] top-[46%] w-[42%]">
+          <div className="absolute left-[40%] top-[42%] w-[32%]">
             <div className="h-px w-full bg-ink/60" />
             <div className="-mt-px flex flex-wrap gap-1 pl-1">
               {state.opened.map((l, i) => (
