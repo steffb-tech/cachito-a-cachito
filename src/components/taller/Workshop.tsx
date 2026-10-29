@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode, type CSSProperties } from "react";
 import { general, pasos, fichas, cuaderno, tablon, secretos, radio, manual, type ItemTablon } from "@/config/content";
 import { codesMatch, randomError, stepIndexOf, waLink, type GameState } from "@/lib/game";
 import escena from "@/assets/taller-escena.jpg";
@@ -18,20 +18,12 @@ const SECRET_IDS = [
   "flexo", "guirnalda", "brioche", "cuadro",
 ];
 
-function Spot({ label, box, onClick, style, tag, children }: { label: string; box: string; onClick: () => void; style?: React.CSSProperties; tag?: string; children?: ReactNode }) {
+function Spot({ label, box, onClick, style, tag, children }: { label: string; box: string; onClick: () => void; style?: CSSProperties; tag?: string; children?: ReactNode }) {
   return (
     <button aria-label={label} onClick={onClick} style={style}
       className={`group absolute rounded-xl transition-all active:scale-95 hover:bg-glow/15 hover:shadow-[0_0_0_2px_var(--glow)] ${box}`}>
       <span className="animate-twinkle pointer-events-none absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-glow shadow-[0_0_6px_var(--glow)]" />
       {tag && <span className="font-hand pointer-events-none absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-card/85 px-2 text-sm leading-5 text-ink shadow-soft">{tag}</span>}
-      {children}
-    </button>
-  );
-}
-
-function Tap({ label, onClick, className = "", children }: { label: string; onClick: () => void; className?: string; children: ReactNode }) {
-  return (
-    <button aria-label={label} onClick={onClick} className={`tappable animate-hint ${className}`}>
       {children}
     </button>
   );
@@ -197,12 +189,12 @@ function HiloRojo({ onPull }: { onPull: () => void }) {
   const [start, setStart] = useState<number | null>(null);
   const pull = () => { setDrag(40); setTimeout(() => setDrag(0), 500); onPull(); };
   return (
-    <div className="absolute right-3 top-3 z-10 flex flex-col items-center"
+    <div className="relative z-10 flex -translate-x-1/2 flex-col items-center"
       onPointerDown={(e) => setStart(e.clientY)}
       onPointerMove={(e) => start !== null && setDrag(Math.max(0, Math.min(60, e.clientY - start)))}
       onPointerUp={() => { if (start !== null && drag > 30) pull(); else if (start !== null && drag < 5) pull(); else setDrag(0); setStart(null); }}
       style={{ touchAction: "none" }}>
-      <div className="w-0.5 bg-thread transition-all" style={{ height: 70 + drag }} />
+      <div className="w-0.5 bg-thread transition-all" style={{ height: 90 + drag }} />
       <button aria-label={general.placaHilo} className="animate-sway w-20 rounded-md border-2 border-thread bg-card px-1 py-1 text-center text-[9px] font-bold leading-tight text-thread shadow-soft">
         {general.placaHilo}
       </button>
