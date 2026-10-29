@@ -36,7 +36,6 @@ function playlistEmbed(url: string) {
 
 export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
   const paso = pasos[state.step];
-  const next = pasos[state.step + 1];
   const [modal, setModal] = useState<null | "cuaderno" | "manual" | "radio" | "nota" | "item">(null);
   const [nota, setNota] = useState("");
   const [item, setItem] = useState<ItemTablon | null>(null);
