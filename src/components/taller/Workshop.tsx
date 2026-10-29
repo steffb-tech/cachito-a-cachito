@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { general, pasos, fichas, cuaderno, tablon, secretos, radio, manual, type ItemTablon } from "@/config/content";
 import { codesMatch, randomError, stepIndexOf, waLink, type GameState } from "@/lib/game";
+import escena from "@/assets/taller-escena.jpg";
 import { Modal, PatitoAvatar, Img, isPlaceholder } from "./ui";
 
 type Props = {
@@ -16,6 +17,17 @@ const SECRET_IDS = [
   ...secretos.botes.map((_, i) => `bote${i}`),
   "flexo", "guirnalda", "brioche", "cuadro",
 ];
+
+function Spot({ label, box, onClick, style, tag, children }: { label: string; box: string; onClick: () => void; style?: React.CSSProperties; tag?: string; children?: ReactNode }) {
+  return (
+    <button aria-label={label} onClick={onClick} style={style}
+      className={`group absolute rounded-xl transition-all active:scale-95 hover:bg-glow/15 hover:shadow-[0_0_0_2px_var(--glow)] ${box}`}>
+      <span className="animate-twinkle pointer-events-none absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-glow shadow-[0_0_6px_var(--glow)]" />
+      {tag && <span className="font-hand pointer-events-none absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-card/85 px-2 text-sm leading-5 text-ink shadow-soft">{tag}</span>}
+      {children}
+    </button>
+  );
+}
 
 function Tap({ label, onClick, className = "", children }: { label: string; onClick: () => void; className?: string; children: ReactNode }) {
   return (
@@ -62,90 +74,67 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
   const pullThread = () => window.open(waLink(general.mensajeHilo, paso.numero), "_blank");
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md overflow-hidden bg-cream shadow-soft">
-      {/* ===== PARED / PEGBOARD ===== */}
-      <section className="pegboard relative px-3 pb-4 pt-2">
-        {/* forma orgánica salvia */}
-        <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 400 600" preserveAspectRatio="none" aria-hidden>
-          <path d="M0 80 C80 30 140 140 230 90 S360 20 400 70 L400 330 C320 380 260 290 170 350 S40 400 0 360 Z" fill="var(--sage)" opacity=".7" />
-        </svg>
+    <main className="mx-auto min-h-dvh max-w-md overflow-hidden bg-wood shadow-soft">
+      {/* ===== ESCENA ILUSTRADA (zonas táctiles en %) ===== */}
+      <section className="relative w-full" style={{ aspectRatio: "1088 / 1632" }}>
+        <img src={escena} alt="El taller" width={1088} height={1632} className="absolute inset-0 h-full w-full object-cover" />
+        {/* brillo cálido de lucecitas y flexo */}
+        {lights && <div className="animate-twinkle pointer-events-none absolute left-[15%] top-[13%] h-[8%] w-[75%] rounded-full bg-glow/25 blur-xl" />}
+        {!lights && <div className="pointer-events-none absolute left-[15%] top-[14%] h-[6%] w-[75%] bg-ink/25 blur-md" />}
+        {lamp ? <div className="pointer-events-none absolute left-[12%] top-[50%] h-[18%] w-[30%] rounded-full bg-glow/30 blur-2xl" />
+              : <div className="pointer-events-none absolute left-[0%] top-[40%] h-[30%] w-[35%] rounded-full bg-ink/30 blur-2xl" />}
 
-        {/* guirnalda */}
-        <Tap label="Guirnalda de luces" className="relative block w-full" onClick={() => { setLights(!lights); secret("guirnalda", secretos.guirnalda); }}>
-          <svg viewBox="0 0 400 40" className="h-8 w-full" aria-hidden>
-            <path d="M0 5 Q100 35 200 10 T400 8" stroke="var(--ink)" strokeWidth="1.2" fill="none" />
-          </svg>
-          <div className="absolute inset-x-0 top-2 flex justify-around">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <span key={i} className={`h-3 w-2 rounded-full ${lights ? "animate-twinkle bg-glow shadow-[0_0_10px_var(--glow)]" : "bg-muted"}`} style={{ animationDelay: `${i * 0.3}s`, marginTop: i % 2 ? 10 : 4 }} />
-            ))}
-          </div>
-        </Tap>
+        <Spot label="Guirnalda de luces" box="left-[15%] top-[14%] w-[75%] h-[6%]" onClick={() => { setLights(!lights); secret("guirnalda", secretos.guirnalda); }} />
+        <Spot label="Cuadro enmarcado" box="left-[23%] top-[0%] w-[19%] h-[13%]" onClick={() => secret("cuadro", finalReached ? secretos.fotoFinal : secretos.cuadro)}>
+          {finalReached && <div className="absolute inset-[12%] overflow-hidden"><Img src={secretos.fotoFinal} className="h-full w-full text-[7px]" /></div>}
+          {!finalReached && !isPlaceholder(secretos.laminaBotanica) && <img src={secretos.laminaBotanica} alt="" className="absolute inset-[12%] h-[76%] w-[76%] object-cover" />}
+        </Spot>
+        {secretos.botes.map((t, i) => (
+          <Spot key={i} label={`Bote de cristal ${i + 1}`} box={`top-[6%] h-[9%] w-[9%]`} style={{ left: `${56 + i * 10}%` }} onClick={() => secret(`bote${i}`, t)} />
+        ))}
+        <Spot label="Flexo" box="left-[0%] top-[40%] w-[32%] h-[24%]" onClick={() => { setLamp(!lamp); secret("flexo", secretos.flexo); }} />
+        <Spot label={manual.titulo} box="left-[3%] top-[64%] w-[25%] h-[9%]" onClick={() => setModal("manual")} tag={manual.titulo} />
+        <Spot label="Radio" box="left-[62%] top-[53%] w-[15%] h-[8%]" onClick={() => { setRadioOn(true); setModal("radio"); }}>
+          {radioOn && <span className="animate-float-up absolute -top-2 left-1/2 text-xl">🎵</span>}
+          {radioOn && <span className="absolute right-[12%] top-[20%] h-2 w-2 rounded-full bg-glow shadow-[0_0_8px_var(--glow)]" />}
+        </Spot>
+        {secretos.cajones.map((t, i) => (
+          <Spot key={i} label={`Cajón ${i + 1}`} box="left-[77%] h-[3.2%] w-[15%]" style={{ top: `${51.8 + i * 3.1}%`, transform: drawers.includes(i) ? "translate(6%, 8%) scale(1.04)" : undefined }}
+            onClick={() => { setDrawers((d) => [...d, i]); secret(`cajon${i}`, t); }} />
+        ))}
+        <Spot label={cuaderno.titulo} box="left-[43%] top-[64%] w-[36%] h-[9%]" onClick={() => setModal("cuaderno")} tag={cuaderno.titulo} />
 
-        {/* plantas colgantes + herramientas */}
-        <div className="relative flex items-start justify-between px-1">
-          <div className="animate-sway text-3xl" aria-hidden>🪴<div className="-mt-2 text-2xl">🌿</div></div>
-          <div className="flex gap-3 pt-1 text-2xl" aria-hidden>
-            <span className="animate-sway" style={{ animationDelay: ".5s" }}>✂️</span>
-            <span className="animate-sway" style={{ animationDelay: "1s" }}>🔫</span>
-            <span className="animate-sway" style={{ animationDelay: "1.5s" }}>🔧</span>
-            <span>🧶</span>
-          </div>
-          <div className="animate-sway text-3xl" style={{ animationDelay: "1s" }} aria-hidden>🪴<div className="-mt-2 text-2xl">🌿</div></div>
-        </div>
+        {/* hilo rojo colgando de la balda */}
+        <div className="absolute left-[71%] top-[16.5%]"><HiloRojo onPull={pullThread} /></div>
 
-        {/* balda */}
-        <div className="relative mt-2">
-          <div className="flex items-end justify-between px-2">
-            <div className="flex items-end gap-1">
-              {secretos.botes.map((t, i) => (
-                <Tap key={i} label={`Bote de cristal ${i + 1}`} onClick={() => secret(`bote${i}`, t)}
-                  className="flex h-12 w-9 items-end justify-center rounded-b-lg rounded-t-md border-2 border-card/80 bg-card/40 pb-1 text-sm">
-                  {["🧷", "🪡", "🔘"][i % 3]}
-                </Tap>
-              ))}
-              <span className="ml-1 text-2xl" aria-hidden>✏️</span>
-            </div>
-            {/* cuadro */}
-            <Tap label="Cuadro enmarcado" onClick={() => secret("cuadro", finalReached ? secretos.fotoFinal : secretos.cuadro)}
-              className="h-16 w-14 rounded-sm border-4 border-wood-dark bg-cream p-1 shadow-soft">
-              {finalReached ? <Img src={secretos.fotoFinal} className="h-full w-full !p-0 text-[6px]" /> : isPlaceholder(secretos.laminaBotanica) ? <span className="text-2xl">🌿</span> : <img src={secretos.laminaBotanica} alt="" className="h-full w-full object-cover" />}
-            </Tap>
-          </div>
-          <div className="h-3 rounded-sm bg-wood-dark shadow-soft" />
-
-          {/* hilo rojo */}
-          <HiloRojo onPull={pullThread} />
+        {/* tablón: post-its y fotos sobre el pegboard */}
+        <div className="absolute left-[41%] top-[21%] grid w-[28%] grid-cols-3 gap-[6%]">
+          {visibleItems.map((t, i) => (
+            <button key={t.id} onClick={() => { setItem(t); setModal("item"); }}
+              className={`tappable relative aspect-square rounded-sm p-0.5 shadow-soft ${t.tipo === "postit" ? "bg-glow" : "bg-card"} ${shining.includes(t.id) ? "animate-shine" : ""}`}
+              style={{ transform: `rotate(${((i * 37) % 9) - 4}deg)` }}>
+              <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-thread shadow" />
+              {t.tipo === "postit" ? <p className="font-hand line-clamp-3 text-[9px] leading-tight">{t.texto}</p> : <Img src={t.imagen || t.texto} className="h-full w-full !p-0 text-[5px]" />}
+            </button>
+          ))}
         </div>
 
         {/* cordel con letras de sobres */}
         {state.opened.length > 0 && (
-          <div className="relative mt-3 pr-24">
-            <div className="h-px w-full bg-ink/50" />
-            <div className="-mt-px flex flex-wrap gap-1.5 pl-2">
+          <div className="absolute left-[30%] top-[46%] w-[42%]">
+            <div className="h-px w-full bg-ink/60" />
+            <div className="-mt-px flex flex-wrap gap-1 pl-1">
               {state.opened.map((l, i) => (
-                <span key={l} className="animate-sway kraft rounded-b-md px-1.5 pb-0.5 pt-1 font-hand text-lg leading-none text-ink shadow-soft" style={{ animationDelay: `${i * 0.4}s` }}>{l}</span>
+                <span key={l} className="animate-sway kraft rounded-b-md px-1 pb-0.5 pt-0.5 font-hand text-sm leading-none text-ink shadow-soft" style={{ animationDelay: `${i * 0.4}s` }}>{l}</span>
               ))}
             </div>
           </div>
         )}
 
-        {/* tablón */}
-        <div className="relative mt-4 grid grid-cols-3 gap-3 pr-20">
-          {visibleItems.map((t, i) => (
-            <button key={t.id} onClick={() => { setItem(t); setModal("item"); }}
-              className={`tappable relative rounded-sm p-1.5 shadow-soft ${t.tipo === "postit" ? "bg-glow" : "bg-card"} ${shining.includes(t.id) ? "animate-shine" : ""}`}
-              style={{ transform: `rotate(${((i * 37) % 9) - 4}deg)` }}>
-              <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full bg-thread shadow" />
-              {t.tipo === "postit" ? <p className="font-hand line-clamp-3 h-12 text-sm leading-tight">{t.texto}</p> : <Img src={t.imagen || t.texto} className="h-12 w-full text-[8px]" />}
-            </button>
-          ))}
-        </div>
-
         {paso.vacaciones && (
-          <div className="pointer-events-none absolute inset-x-0 top-24 z-10 flex justify-center">
+          <div className="pointer-events-none absolute inset-x-0 top-[22%] z-10 flex justify-center">
             <div className="animate-sway text-center">
-              <div className="mx-auto h-8 w-28 border-x-2 border-t-2 border-ink/50 rounded-t-full" />
+              <div className="mx-auto h-8 w-28 rounded-t-full border-x-2 border-t-2 border-ink/50" />
               <div className="rounded-lg border-4 border-wood-dark bg-wood px-5 py-2 shadow-soft">
                 <p className="font-hand text-3xl text-ink">{general.cartelVacaciones}</p>
                 <p className="text-lg">🏖️ 🇵🇹</p>
@@ -153,63 +142,17 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
             </div>
           </div>
         )}
-      </section>
 
-      {/* ===== MESA ===== */}
-      <section className="relative bg-wood px-3 pb-6 pt-3">
-        <div className="absolute inset-x-0 top-0 h-2 bg-wood-dark/60" />
-        <div className="rounded-2xl bg-sage p-3 shadow-soft">
-          <Cuacfesionario state={state} goTo={goTo} reset={reset} onBrioche={() => secret("brioche", secretos.brioche)} />
-
-          <div className="mt-4 grid grid-cols-3 items-end gap-3">
-            {/* flexo */}
-            <Tap label="Flexo" onClick={() => { setLamp(!lamp); secret("flexo", secretos.flexo); }} className="relative flex flex-col items-center">
-              <div className={`h-6 w-12 rounded-t-full bg-sage-dark ${lamp ? "shadow-[0_14px_24px_6px_var(--glow)]" : ""}`} />
-              <div className="h-10 w-1 rotate-12 bg-sage-dark" />
-              <div className="h-2 w-10 rounded bg-sage-dark" />
-              <span className="mt-1 text-[10px] text-ink/70">🕯️</span>
-            </Tap>
-            {/* cuaderno */}
-            <Tap label={cuaderno.titulo} onClick={() => setModal("cuaderno")} className="flex flex-col items-center">
-              <div className="flex h-14 w-full rotate-[-4deg] overflow-hidden rounded bg-card shadow-soft">
-                <div className="flex-1 border-r border-border bg-[repeating-linear-gradient(transparent_0_7px,var(--border)_7px_8px)]" />
-                <div className="flex-1 bg-[repeating-linear-gradient(transparent_0_7px,var(--border)_7px_8px)]" />
-              </div>
-              <span className="font-hand mt-1 text-base leading-none">{cuaderno.titulo}</span>
-            </Tap>
-            {/* radio */}
-            <Tap label="Radio" onClick={() => { setRadioOn(true); setModal("radio"); }} className="relative flex flex-col items-center">
-              {radioOn && <span className="animate-float-up absolute -top-4 text-lg">🎵</span>}
-              <div className="flex h-12 w-full items-center gap-1 rounded-lg bg-wood-dark p-1.5 shadow-soft">
-                <div className="h-full flex-1 rounded bg-[repeating-linear-gradient(90deg,var(--ink)_0_1px,transparent_1px_4px)] opacity-60" />
-                <span className={`h-2 w-2 rounded-full ${radioOn ? "bg-glow shadow-[0_0_6px_var(--glow)]" : "bg-ink/40"}`} />
-              </div>
-              <span className="font-hand mt-1 text-base leading-none">Radio</span>
-            </Tap>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 items-end gap-3">
-            {/* cajonera */}
-            <div className="rounded-md bg-wood-dark p-1 shadow-soft">
-              {secretos.cajones.map((t, i) => (
-                <button key={i} aria-label={`Cajón ${i + 1}`} onClick={() => { setDrawers((d) => [...d, i]); secret(`cajon${i}`, t); }}
-                  className={`tappable mb-1 flex h-7 w-full items-center justify-center rounded-sm bg-wood transition-transform last:mb-0 ${drawers.includes(i) ? "translate-x-2" : ""}`}>
-                  <span className="h-1.5 w-5 rounded-full bg-ink/50" />
-                </button>
-              ))}
-            </div>
-            {/* pila de libros */}
-            <Tap label={manual.titulo} onClick={() => setModal("manual")} className="flex flex-col items-center gap-0.5">
-              <div className="h-4 w-[80%] rounded-sm bg-sage-dark" />
-              <div className="font-hand flex h-6 w-full items-center justify-center rounded-sm bg-wood-dark text-sm text-primary-foreground">{manual.titulo}</div>
-              <div className="h-5 w-[90%] rounded-sm bg-kraft" />
-            </Tap>
-          </div>
-        </div>
-
-        <p className="mt-3 text-center text-xs text-ink/60">
+        <p className="absolute bottom-2 left-2 rounded-full bg-card/80 px-2 py-0.5 text-[10px] text-ink/70">
           {general.contadorSecretos}: {state.found.filter((f) => SECRET_IDS.includes(f)).length}/{SECRET_IDS.length}
         </p>
+      </section>
+
+      {/* ===== CUACFESIONARIO ===== */}
+      <section className="-mt-8 relative z-10 px-3 pb-6">
+        <div className="rounded-2xl bg-sage p-3 pt-5 shadow-soft">
+          <Cuacfesionario state={state} goTo={goTo} reset={reset} onBrioche={() => secret("brioche", secretos.brioche)} />
+        </div>
       </section>
 
       {/* ===== MODALES ===== */}
