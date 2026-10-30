@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode, type CSSProperties } from "react";
 import { general, pasos, fichas, cuaderno, tablon, secretos, radio, manual, type ItemTablon } from "@/config/content";
 import { codesMatch, randomError, stepIndexOf, waLink, type GameState } from "@/lib/game";
 import escena from "@/assets/taller-escena.jpg";
+import { avatarPatito } from "@/config/content";
 import { Modal, PatitoAvatar, Img, isPlaceholder } from "./ui";
 
 type Props = {
@@ -34,7 +35,7 @@ function playlistEmbed(url: string) {
   const sp = url.match(/open\.spotify\.com\/(playlist|album)\/([A-Za-z0-9]+)/);
   if (sp) return `https://open.spotify.com/embed/${sp[1]}/${sp[2]}`;
   const yt = url.match(/[?&]list=([A-Za-z0-9_-]+)/);
-  if (yt) return `https://www.youtube.com/embed/videoseries?list=${yt[1]}`;
+  if (yt) return `https://www.youtube.com/embed/videoseries?list=${yt[1]}&autoplay=1&playsinline=1`;
   return url;
 }
 
@@ -63,7 +64,7 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
 
   const finalReached = state.step >= stepIndexOf("8");
   const fichasOk = fichas.filter((f) => pasos.slice(0, state.step + 1).some((p) => p.ficha === f.id));
-  const pullThread = () => window.open(waLink(general.mensajeHilo, paso.numero), "_blank");
+  const pullThread = () => { window.location.href = waLink(general.mensajeHilo, paso.numero); };
 
   return (
     <main className="mx-auto min-h-dvh max-w-md overflow-hidden bg-wood shadow-soft">
@@ -100,25 +101,27 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
         <div className="absolute left-[71%] top-[16.5%]"><HiloRojo onPull={pullThread} /></div>
 
         {/* tablón: post-its y fotos sobre el pegboard */}
-        <div className="absolute left-[41%] top-[21%] grid w-[28%] grid-cols-3 gap-[6%]">
+        <div className="absolute left-[37%] top-[20%] z-[5] grid w-[38%] grid-cols-3 gap-[5%]">
           {visibleItems.map((t, i) => (
             <button key={t.id} onClick={() => { setItem(t); setModal("item"); }}
               className={`tappable relative aspect-square rounded-sm p-0.5 shadow-soft ${t.tipo === "postit" ? "bg-glow" : "bg-card"} ${shining.includes(t.id) ? "animate-shine" : ""}`}
               style={{ transform: `rotate(${((i * 37) % 9) - 4}deg)` }}>
               <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-thread shadow" />
-              {t.tipo === "postit" ? <p className="font-hand line-clamp-3 text-[9px] leading-tight">{t.texto}</p> : <Img src={t.imagen || t.texto} className="h-full w-full !p-0 text-[5px]" />}
+              {t.tipo === "postit" ? <p className="font-hand line-clamp-4 text-[11px] leading-tight">{t.texto}</p> : <Img src={t.imagen || t.texto} className="h-full w-full !p-0 text-[6px]" />}
             </button>
           ))}
         </div>
 
-        {/* cordel con letras de sobres */}
+        {/* cinta con luces y letras en la balda superior */}
         {state.opened.length > 0 && (
-          <div className="absolute left-[40%] top-[42%] w-[32%]">
-            <div className="h-px w-full bg-ink/60" />
-            <div className="-mt-px flex flex-wrap gap-1 pl-1">
-              {state.opened.map((l, i) => (
-                <span key={l} className="animate-sway kraft rounded-b-md px-1 pb-0.5 pt-0.5 font-hand text-sm leading-none text-ink shadow-soft" style={{ animationDelay: `${i * 0.4}s` }}>{l}</span>
-              ))}
+          <div className="pointer-events-none absolute left-[14%] top-[13.5%] z-[6] w-[78%]">
+            <div className="h-0.5 w-full rounded bg-ink/70" />
+            <div className="-mt-0.5 flex items-start justify-center gap-1">
+              {state.opened.flatMap((l, i) => [
+                <span key={`b${i}`} className={`mt-0.5 h-2.5 w-2 rounded-full ${lights ? "animate-twinkle bg-glow shadow-[0_0_8px_var(--glow)]" : "bg-muted"}`} style={{ animationDelay: `${i * 0.3}s` }} />,
+                <span key={l} className="animate-sway kraft rounded-b-md border border-ink/20 px-1.5 pb-1 pt-1 font-hand text-2xl leading-none text-ink shadow-soft" style={{ animationDelay: `${i * 0.4}s` }}>{l}</span>,
+              ])}
+              <span className={`mt-0.5 h-2.5 w-2 rounded-full ${lights ? "animate-twinkle bg-glow shadow-[0_0_8px_var(--glow)]" : "bg-muted"}`} />
             </div>
           </div>
         )}
@@ -163,7 +166,7 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
 
       <Modal open={modal === "radio"} onClose={() => setModal(null)} title={`📻 ${radio.titulo}`}>
         {playlistEmbed(general.playlist)
-          ? <iframe src={playlistEmbed(general.playlist)!} className="h-96 w-full rounded-xl" allow="autoplay; encrypted-media" title="Playlist" />
+          ? <iframe src={playlistEmbed(general.playlist)!} className="aspect-video w-full rounded-xl" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title="Playlist" />
           : <p className="text-sm">{radio.sinPlaylist}</p>}
       </Modal>
 
@@ -208,6 +211,7 @@ function Cuacfesionario({ state, goTo, reset, onBrioche }: { state: GameState; g
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
   const [party, setParty] = useState(0);
+  const [open, setOpen] = useState(false);
 
   const advance = (i: number) => { goTo(i); setParty((p) => p + 1); setError(""); setValue(""); };
   const submit = (e: React.FormEvent) => {
@@ -217,8 +221,17 @@ function Cuacfesionario({ state, goTo, reset, onBrioche }: { state: GameState; g
     else setError(randomError());
   };
 
+  if (!open) return (
+    <button onClick={() => setOpen(true)} className="tappable flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left shadow-soft">
+      <img src={avatarPatito} alt="Patito" width={84} height={84} className="h-20 w-20 shrink-0 object-contain drop-shadow" />
+      <span className="animate-pop relative flex-1 rounded-2xl bg-card p-3 font-hand text-2xl leading-tight text-ink shadow-soft">
+        ¡Cuac! Púlsame, que tengo algo que contarte. 🐥
+      </span>
+    </button>
+  );
   return (
     <div className="relative rounded-2xl bg-cream p-3 shadow-soft">
+      <button onClick={() => setOpen(false)} aria-label="Plegar" className="absolute right-2 top-2 z-10 rounded-full bg-muted px-2 text-sm tappable">▾</button>
       <p className="font-hand absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-sage-dark px-3 text-lg leading-6 text-primary-foreground">{general.rotuloCuacfesionario}</p>
       {party > 0 && (
         <div key={party} className="pointer-events-none absolute inset-0 flex justify-around" aria-hidden>
@@ -234,7 +247,7 @@ function Cuacfesionario({ state, goTo, reset, onBrioche }: { state: GameState; g
         </div>
       </div>
       {paso.construccion && (
-        <a href={waLink(general.mensajeFoto, paso.numero)} target="_blank" rel="noreferrer"
+        <a href={waLink(general.mensajeFoto, paso.numero)} target="_blank" rel="noopener noreferrer"
           className="mt-3 block rounded-xl bg-kraft py-2 text-center text-sm font-bold shadow-soft tappable">{cuaderno.botonFoto}</a>
       )}
       {paso.botonAvanzar && next ? (
@@ -288,7 +301,7 @@ function Cuaderno({ open, onClose, fichasOk }: { open: boolean; onClose: () => v
               <div className="mt-4 space-y-2">
                 {f.notas.map((n, i) => <p key={i} className="font-hand rounded-lg bg-glow/60 p-3 text-xl leading-snug">{n}</p>)}
               </div>
-              <a href={waLink(general.mensajeFoto, numero)} target="_blank" rel="noreferrer"
+              <a href={waLink(general.mensajeFoto, numero)} target="_blank" rel="noopener noreferrer"
                 className="mt-5 block rounded-xl bg-primary py-3 text-center font-bold text-primary-foreground shadow-soft tappable">{cuaderno.botonFoto}</a>
             </article>
           )}

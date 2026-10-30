@@ -24,7 +24,7 @@ export const general = {
   mensajeFoto: "📸 Paso {n} terminado, Patito. ¿Me das el visto bueno?",
   mensajeHilo: "🧵 Han tirado del hilo rojo. Cachito en apuros en el paso {n}.",
   // Enlace de Spotify o YouTube (playlist). Se convierte solo a reproductor.
-  playlist: "[URL_PLAYLIST]",
+  playlist: "https://youtube.com/playlist?list=PLAPbJOs-QqLc&si=S_r0r2QBryVc5u8H",
   placaHilo: "¿Cachito en apuros? Tire del hilo rojo",
   cartelVacaciones: "Cerrado por vacaciones",
   rotuloCuacfesionario: "Cuacfesionario",

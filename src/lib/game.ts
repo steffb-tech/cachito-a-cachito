@@ -22,7 +22,7 @@ export function stepIndexOf(id: string) {
 }
 
 export function waLink(template: string, n: number) {
-  return `https://wa.me/${general.whatsapp}?text=${encodeURIComponent(template.replace("{n}", String(n)))}`;
+  return `https://api.whatsapp.com/send?phone=${general.whatsapp}&text=${encodeURIComponent(template.replace("{n}", String(n)))}`;
 }
 
 export type GameState = {
