@@ -171,7 +171,11 @@ export type Ficha = {
   notas: string[];
 };
 
-const ilu = (f: number, p: number) => `[ILUSTRACION_FICHA_${f}_PASO_${p}]`;
+// Ilustraciones de las fichas (src/assets/fichas/fichaX_pasoY.webp.asset.json)
+const ilustraciones = import.meta.glob<{ url: string }>("@/assets/fichas/*.asset.json", { eager: true, import: "default" });
+const ilu = (f: number, p: number) =>
+  Object.entries(ilustraciones).find(([k]) => k.endsWith(`/ficha${f}_paso${p}.webp.asset.json`))?.[1].url ??
+  `[ILUSTRACION_FICHA_${f}_PASO_${p}]`;
 
 export const fichas: Ficha[] = [
   {
