@@ -164,11 +164,30 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
           : <div className="bg-card rounded p-3 shadow-soft"><Img src={item.imagen || item.texto} className="h-72 w-full" /></div>)}
       </Modal>
 
-      <Modal open={modal === "radio"} onClose={() => setModal(null)} title={`📻 ${radio.titulo}`}>
-        {playlistEmbed(general.playlist)
-          ? <iframe src={playlistEmbed(general.playlist)!} className="aspect-video w-full rounded-xl" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title="Playlist" />
-          : <p className="text-sm">{radio.sinPlaylist}</p>}
-      </Modal>
+      {/* Radio persistente: el iframe nunca se desmonta mientras la radio esté encendida */}
+      {radioOn && (
+        modal === "radio" ? (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink/50 p-4" onClick={() => setModal(null)}>
+            <div className="w-full max-w-md rounded-2xl bg-card p-4 shadow-soft" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="font-hand text-2xl">📻 {radio.titulo}</h2>
+                <div className="flex gap-1">
+                  <button onClick={() => setModal(null)} className="rounded-full bg-sage px-3 py-1 text-sm">➖ Minimizar</button>
+                  <button aria-label="Apagar radio" onClick={() => { setRadioOn(false); setModal(null); }} className="rounded-full bg-muted px-3 py-1 text-sm">⏻</button>
+                </div>
+              </div>
+              <RadioFrame />
+            </div>
+          </div>
+        ) : (
+          <div className="fixed bottom-3 left-1/2 z-40 flex w-[min(92vw,26rem)] -translate-x-1/2 items-center gap-2 rounded-full bg-card/95 p-1.5 pr-2 shadow-soft">
+            <div className="h-10 w-16 shrink-0 overflow-hidden rounded-full"><RadioFrame compact /></div>
+            <button onClick={() => setModal("radio")} className="flex-1 truncate text-left text-sm">🎵 {radio.titulo}</button>
+            <button onClick={() => setModal("radio")} aria-label="Abrir radio" className="rounded-full bg-sage px-2 py-1 text-xs">⬆️</button>
+            <button onClick={() => setRadioOn(false)} aria-label="Apagar radio" className="rounded-full bg-muted px-2 py-1 text-xs">⏻</button>
+          </div>
+        )
+      )}
 
       <Modal open={modal === "manual"} onClose={() => setModal(null)} title={manual.titulo}>
         <p className="-mt-2 mb-3 text-sm text-muted-foreground">{manual.subtitulo}</p>
@@ -190,17 +209,31 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
 function HiloRojo({ onPull }: { onPull: () => void }) {
   const [drag, setDrag] = useState(0);
   const [start, setStart] = useState<number | null>(null);
-  const pull = () => { setDrag(40); setTimeout(() => setDrag(0), 500); onPull(); };
+  const [hint, setHint] = useState(false);
+  const THRESHOLD = 50;
+  const release = () => {
+    if (start === null) return;
+    const d = drag;
+    setStart(null);
+    setDrag(0);
+    if (d >= THRESHOLD) onPull();
+    else { setHint(true); setTimeout(() => setHint(false), 1500); }
+  };
   return (
-    <div className="relative z-10 flex -translate-x-1/2 flex-col items-center"
-      onPointerDown={(e) => setStart(e.clientY)}
-      onPointerMove={(e) => start !== null && setDrag(Math.max(0, Math.min(60, e.clientY - start)))}
-      onPointerUp={() => { if (start !== null && drag > 30) pull(); else if (start !== null && drag < 5) pull(); else setDrag(0); setStart(null); }}
-      style={{ touchAction: "none" }}>
-      <div className="w-0.5 bg-thread transition-all" style={{ height: 90 + drag }} />
-      <button aria-label={general.placaHilo} className="animate-sway w-20 rounded-md border-2 border-thread bg-card px-1 py-1 text-center text-[9px] font-bold leading-tight text-thread shadow-soft">
+    <div className="relative z-10 flex -translate-x-1/2 select-none flex-col items-center"
+      onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setStart(e.clientY); }}
+      onPointerMove={(e) => start !== null && setDrag(Math.max(0, Math.min(110, e.clientY - start)))}
+      onPointerUp={release}
+      onPointerCancel={release}
+      style={{ touchAction: "none", cursor: start !== null ? "grabbing" : "grab" }}>
+      <div className={`w-0.5 bg-thread ${start === null ? "transition-all duration-300" : ""}`} style={{ height: 90 + drag, width: drag >= THRESHOLD ? 3 : 2 }} />
+      <div role="button" aria-label={general.placaHilo}
+        className={`${start === null ? "animate-sway" : ""} w-20 rounded-md border-2 border-thread bg-card px-1 py-1 text-center text-[9px] font-bold leading-tight text-thread shadow-soft`}>
         {general.placaHilo}
-      </button>
+      </div>
+      {(hint || (start !== null && drag < THRESHOLD)) && (
+        <span className="mt-1 whitespace-nowrap rounded-full bg-card/90 px-2 text-[10px] text-thread shadow-soft">⬇️ Tira más fuerte</span>
+      )}
     </div>
   );
 }
