@@ -330,7 +330,7 @@ function Cuaderno({ open, onClose, fichasOk }: { open: boolean; onClose: () => v
                 {f.pasos.map((p, i) => (
                   <li key={i} className="rounded-xl bg-card/90 p-3 shadow-soft">
                     <p className="text-sm"><b className="font-hand mr-1 text-2xl text-sage-dark">{i + 1}.</b>{p.texto}</p>
-                    {p.ilustracion && <Img src={p.ilustracion} className="mt-2 h-28 w-full" />}
+                    {p.ilustracion && <Img src={p.ilustracion} className="mt-2 aspect-[4/3] w-full rounded-lg !object-contain" />}
                   </li>
                 ))}
               </ol>
