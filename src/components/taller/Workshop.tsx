@@ -164,30 +164,33 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
           : <div className="bg-card rounded p-3 shadow-soft"><Img src={item.imagen || item.texto} className="h-72 w-full" /></div>)}
       </Modal>
 
-      {/* Radio persistente: el iframe nunca se desmonta mientras la radio esté encendida */}
-      {radioOn && (
-        modal === "radio" ? (
-          <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink/50 p-4" onClick={() => setModal(null)}>
-            <div className="w-full max-w-md rounded-2xl bg-card p-4 shadow-soft" onClick={(e) => e.stopPropagation()}>
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="font-hand text-2xl">📻 {radio.titulo}</h2>
-                <div className="flex gap-1">
-                  <button onClick={() => setModal(null)} className="rounded-full bg-sage px-3 py-1 text-sm">➖ Minimizar</button>
-                  <button aria-label="Apagar radio" onClick={() => { setRadioOn(false); setModal(null); }} className="rounded-full bg-muted px-3 py-1 text-sm">⏻</button>
+      {/* Radio persistente: misma estructura siempre, solo cambian clases → el iframe no se destruye */}
+      {radioOn && (() => {
+        const big = modal === "radio";
+        const src = playlistEmbed(general.playlist);
+        return (
+          <div className={big ? "fixed inset-0 z-40 flex items-center justify-center bg-ink/50 p-4" : "pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center"}
+            onClick={() => big && setModal(null)}>
+            <div onClick={(e) => e.stopPropagation()}
+              className={big ? "w-full max-w-md rounded-2xl bg-card p-4 shadow-soft" : "pointer-events-auto flex w-[min(92vw,26rem)] items-center gap-2 rounded-full bg-card/95 p-1.5 pr-2 shadow-soft"}>
+              <div className={big ? "mb-3 flex items-center justify-between gap-2" : "contents"}>
+                <button onClick={() => setModal(big ? null : "radio")} className={big ? "font-hand text-left text-2xl" : "order-2 flex-1 truncate text-left text-sm"}>
+                  {big ? "📻" : "🎵"} {radio.titulo}
+                </button>
+                <div className={big ? "flex gap-1" : "order-3 flex gap-1"}>
+                  <button onClick={() => setModal(big ? null : "radio")} className="rounded-full bg-sage px-3 py-1 text-xs">{big ? "➖ Minimizar" : "⬆️"}</button>
+                  <button aria-label="Apagar radio" onClick={() => { setRadioOn(false); setModal(null); }} className="rounded-full bg-muted px-3 py-1 text-xs">⏻</button>
                 </div>
               </div>
-              <RadioFrame />
+              <div className={big ? "w-full" : "order-1 h-10 w-16 shrink-0 overflow-hidden rounded-full"}>
+                {src
+                  ? <iframe src={src} className={big ? "aspect-video w-full rounded-xl" : "h-full w-full"} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title="Playlist" />
+                  : <p className="text-sm">{radio.sinPlaylist}</p>}
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="fixed bottom-3 left-1/2 z-40 flex w-[min(92vw,26rem)] -translate-x-1/2 items-center gap-2 rounded-full bg-card/95 p-1.5 pr-2 shadow-soft">
-            <div className="h-10 w-16 shrink-0 overflow-hidden rounded-full"><RadioFrame compact /></div>
-            <button onClick={() => setModal("radio")} className="flex-1 truncate text-left text-sm">🎵 {radio.titulo}</button>
-            <button onClick={() => setModal("radio")} aria-label="Abrir radio" className="rounded-full bg-sage px-2 py-1 text-xs">⬆️</button>
-            <button onClick={() => setRadioOn(false)} aria-label="Apagar radio" className="rounded-full bg-muted px-2 py-1 text-xs">⏻</button>
-          </div>
-        )
-      )}
+        );
+      })()}
 
       <Modal open={modal === "manual"} onClose={() => setModal(null)} title={manual.titulo}>
         <p className="-mt-2 mb-3 text-sm text-muted-foreground">{manual.subtitulo}</p>
