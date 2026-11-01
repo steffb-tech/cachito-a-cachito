@@ -1,9 +1,10 @@
-import { useEffect, useState, type ReactNode, type CSSProperties } from "react";
-import { general, pasos, fichas, cuaderno, tablon, secretos, radio, manual, type ItemTablon } from "@/config/content";
+import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
+import { general, pasos, fichas, cuaderno, secretos, radio, manual, cuadroDecorativo, cajonesRecuerdos, itemsTablonEnPaso, secretIds, type ItemTablon } from "@/config/content";
 import { codesMatch, randomError, stepIndexOf, waLink, type GameState } from "@/lib/game";
 import escena from "@/assets/taller-escena.jpg";
 import { avatarPatito } from "@/config/content";
-import { Modal, PatitoAvatar, Img, isPlaceholder } from "./ui";
+import { Button, Modal, PatitoAvatar, Img, isPlaceholder } from "./ui";
+import { Recuerdos } from "./Recuerdos";
 
 type Props = {
   state: GameState;
@@ -13,11 +14,7 @@ type Props = {
   reset: () => void;
 };
 
-const SECRET_IDS = [
-  ...secretos.cajones.map((_, i) => `cajon${i}`),
-  ...secretos.botes.map((_, i) => `bote${i}`),
-  "flexo", "guirnalda", "brioche", "cuadro",
-];
+const SECRET_IDS = secretIds;
 
 function Spot({ label, box, onClick, style, tag, children }: { label: string; box: string; onClick: () => void; style?: CSSProperties; tag?: string; children?: ReactNode }) {
   return (
@@ -35,12 +32,12 @@ function playlistEmbed(url: string) {
   const sp = url.match(/open\.spotify\.com\/(playlist|album)\/([A-Za-z0-9]+)/);
   if (sp) return `https://open.spotify.com/embed/${sp[1]}/${sp[2]}`;
   const yt = url.match(/[?&]list=([A-Za-z0-9_-]+)/);
-  if (yt) return `https://www.youtube.com/embed/videoseries?list=${yt[1]}&autoplay=1&playsinline=1`;
+  if (yt) return `https://www.youtube.com/embed/videoseries?list=${yt[1]}&autoplay=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(typeof window === "undefined" ? "" : window.location.origin)}`;
   return url;
 }
 
 export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
-  const paso = pasos[Math.min(state.step, pasos.length - 1)]!;
+  const paso = pasos[Math.min(state.step, pasos.length - 1)] ?? pasos[0];
   const [modal, setModal] = useState<null | "cuaderno" | "manual" | "radio" | "nota" | "item">(null);
   const [nota, setNota] = useState("");
   const [item, setItem] = useState<ItemTablon | null>(null);
@@ -48,6 +45,30 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
   const [lights, setLights] = useState(true);
   const [radioOn, setRadioOn] = useState(false);
   const [drawers, setDrawers] = useState<number[]>([]);
+  const [cajon, setCajon] = useState<number | null>(null);
+  const [radioPlaying, setRadioPlaying] = useState(false);
+  const playerRef = useRef<HTMLIFrameElement>(null);
+  const listenToPlayer = () => {
+    const player = playerRef.current?.contentWindow;
+    if (!player) return;
+    player.postMessage(JSON.stringify({ event: "listening", id: "miga-radio" }), "https://www.youtube.com");
+    player.postMessage(JSON.stringify({ event: "command", func: "addEventListener", args: ["onStateChange"] }), "https://www.youtube.com");
+  };
+  useEffect(() => {
+    if (!radioOn) return;
+    const receive = (event: MessageEvent) => {
+      if (event.origin !== "https://www.youtube.com" || event.source !== playerRef.current?.contentWindow) return;
+      try {
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (!data || typeof data !== "object") return;
+        const status = data.event === "onStateChange" && typeof data.info === "number" ? data.info : data.info?.playerState;
+        if (typeof status === "number") setRadioPlaying(status === 1);
+      } catch { /* Ignore unrelated messages. */ }
+    };
+    window.addEventListener("message", receive);
+    const retry = window.setInterval(listenToPlayer, 1000);
+    return () => { window.removeEventListener("message", receive); window.clearInterval(retry); };
+  }, [radioOn]);
 
   const secret = (id: string, text: string) => {
     find(id);
@@ -55,16 +76,15 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
     setModal("nota");
   };
 
-  const visibleItems = tablon.filter((t) => stepIndexOf(t.unlockAtStep) <= state.step);
+  const visibleItems = itemsTablonEnPaso(state.step);
   const newIds = visibleItems.filter((t) => !state.seen.includes(t.id)).map((t) => t.id);
   const [shining] = useState(newIds);
   useEffect(() => {
     if (newIds.length) markSeen(newIds);
   }, [newIds.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const finalReached = state.step >= stepIndexOf("8");
   const fichasOk = fichas.filter((f) => pasos.slice(0, state.step + 1).some((p) => p.ficha === f.id));
-  const pullThread = () => { window.location.href = waLink(general.mensajeHilo, paso.numero); };
+  const pullThread = () => { window.location.href = waLink(general.mensajeHilo, paso?.numero ?? 1); };
 
   return (
     <main className="mx-auto min-h-dvh max-w-md overflow-hidden bg-wood shadow-soft">
@@ -78,22 +98,19 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
               : <div className="pointer-events-none absolute left-[0%] top-[40%] h-[30%] w-[35%] rounded-full bg-ink/30 blur-2xl" />}
 
         <Spot label="Guirnalda de luces" box="left-[15%] top-[14%] w-[75%] h-[6%]" onClick={() => { setLights(!lights); secret("guirnalda", secretos.guirnalda); }} />
-        <Spot label="Cuadro enmarcado" box="left-[23%] top-[0%] w-[19%] h-[13%]" onClick={() => secret("cuadro", finalReached ? secretos.fotoFinal : secretos.cuadro)}>
-          {finalReached && <div className="absolute inset-[12%] overflow-hidden"><Img src={secretos.fotoFinal} className="h-full w-full text-[7px]" /></div>}
-          {!finalReached && !isPlaceholder(secretos.laminaBotanica) && <img src={secretos.laminaBotanica} alt="" className="absolute inset-[12%] h-[76%] w-[76%] object-cover" />}
-        </Spot>
+        <div className="pointer-events-none absolute left-[25.2%] top-[0%] h-[10.3%] w-[14%] rotate-[-3deg] overflow-hidden"><img src={cuadroDecorativo.imagen} alt={cuadroDecorativo.descripcion} width={768} height={960} className="h-full w-full object-cover" /></div>
         {secretos.botes.map((t, i) => (
           <Spot key={i} label={`Bote de cristal ${i + 1}`} box={`top-[6%] h-[9%] w-[9%]`} style={{ left: `${56 + i * 10}%` }} onClick={() => secret(`bote${i}`, t)} />
         ))}
         <Spot label="Flexo" box="left-[0%] top-[40%] w-[32%] h-[24%]" onClick={() => { setLamp(!lamp); secret("flexo", secretos.flexo); }} />
         <Spot label={manual.titulo} box="left-[3%] top-[64%] w-[25%] h-[9%]" onClick={() => setModal("manual")} tag={manual.titulo} />
         <Spot label="Radio" box="left-[62%] top-[53%] w-[15%] h-[8%]" onClick={() => { setRadioOn(true); setModal("radio"); }}>
-          {radioOn && <span className="animate-float-up absolute -top-2 left-1/2 text-xl">🎵</span>}
+          {radioPlaying && <span aria-label="Música sonando" className="pointer-events-none absolute inset-0 text-2xl text-thread">{["♪", "♫", "♩"].map((note) => <span key={note} className="radio-note absolute left-1/2 top-0">{note}</span>)}</span>}
           {radioOn && <span className="absolute right-[12%] top-[20%] h-2 w-2 rounded-full bg-glow shadow-[0_0_8px_var(--glow)]" />}
         </Spot>
-        {secretos.cajones.map((t, i) => (
+        {cajonesRecuerdos.map((_, i) => (
           <Spot key={i} label={`Cajón ${i + 1}`} box="left-[77%] h-[3.2%] w-[15%]" style={{ top: `${51.8 + i * 3.1}%`, transform: drawers.includes(i) ? "translate(6%, 8%) scale(1.04)" : undefined }}
-            onClick={() => { setDrawers((d) => [...d, i]); secret(`cajon${i}`, t); }} />
+            onClick={() => { setDrawers((d) => d.includes(i) ? d : [...d, i]); find(`cajon${i}`); setCajon(i); setModal(null); }} />
         ))}
         <Spot label={cuaderno.titulo} box="left-[43%] top-[64%] w-[36%] h-[9%]" onClick={() => setModal("cuaderno")} tag={cuaderno.titulo} />
 
@@ -101,14 +118,13 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
         <div className="absolute left-[71%] top-[16.5%]"><HiloRojo onPull={pullThread} /></div>
 
         {/* tablón: post-its y fotos sobre el pegboard */}
-        <div className="absolute left-[37%] top-[20%] z-[5] grid w-[38%] grid-cols-3 gap-[5%]">
+        <div className="absolute left-[43%] top-[22%] z-[5] grid w-[24%] grid-cols-1 gap-3">
           {visibleItems.map((t, i) => (
-            <button key={t.id} onClick={() => { setItem(t); setModal("item"); }}
-              className={`tappable relative aspect-square rounded-sm p-0.5 shadow-soft ${t.tipo === "postit" ? "bg-glow" : "bg-card"} ${shining.includes(t.id) ? "animate-shine" : ""}`}
+            <Button key={t.id} aria-label={t.tipo === "postit" ? "Nota del tablón" : "Foto del tablón"} onClick={() => { setItem(t); setModal("item"); }}
+              className={`relative rounded-sm p-1 shadow-soft ${t.tipo === "postit" ? "bg-glow" : "aspect-[4/5] bg-card"} ${shining.includes(t.id) ? "animate-shine" : ""}`}
               style={{ transform: `rotate(${((i * 37) % 9) - 4}deg)` }}>
-              <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-thread shadow" />
-              {t.tipo === "postit" ? <p className="font-hand line-clamp-4 text-[11px] leading-tight">{t.texto}</p> : <Img src={t.imagen || t.texto} className="h-full w-full !p-0 text-[6px]" />}
-            </button>
+              {t.tipo === "postit" ? <><span className="tape absolute -top-2 left-1/2 h-3 w-10 -translate-x-1/2 rotate-[3deg]" /><p className="font-hand px-1 py-2 text-sm leading-tight">{t.texto}</p></> : <><span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-thread shadow" /><Img src={t.imagen || t.texto} className="h-full w-full !p-0 text-[6px]" /></>}
+            </Button>
           ))}
         </div>
 
@@ -126,7 +142,7 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
           </div>
         )}
 
-        {paso.vacaciones && (
+        {paso?.vacaciones && (
           <div className="pointer-events-none absolute inset-x-0 top-[22%] z-10 flex justify-center">
             <div className="animate-sway text-center">
               <div className="mx-auto h-8 w-28 rounded-t-full border-x-2 border-t-2 border-ink/50" />
@@ -161,7 +177,7 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
       <Modal open={modal === "item"} onClose={() => setModal(null)}>
         {item && (item.tipo === "postit"
           ? <div className="bg-glow rounded p-6 shadow-soft"><p className="font-hand text-3xl">{item.texto}</p></div>
-          : <div className="bg-card rounded p-3 shadow-soft"><Img src={item.imagen || item.texto} className="h-72 w-full" /></div>)}
+          : <div className="bg-card rounded p-3 pt-8 shadow-soft"><Img src={item.imagen || item.texto} className="max-h-[70dvh] w-full !object-contain" /></div>)}
       </Modal>
 
       {/* Radio persistente: misma estructura siempre, solo cambian clases → el iframe no se destruye */}
@@ -179,12 +195,12 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
                 </button>
                 <div className={big ? "flex gap-1" : "order-3 flex gap-1"}>
                   <button onClick={() => setModal(big ? null : "radio")} className="rounded-full bg-sage px-3 py-1 text-xs">{big ? "➖ Minimizar" : "⬆️"}</button>
-                  <button aria-label="Apagar radio" onClick={() => { setRadioOn(false); setModal(null); }} className="rounded-full bg-muted px-3 py-1 text-xs">⏻</button>
+                  <button aria-label="Apagar radio" onClick={() => { setRadioOn(false); setRadioPlaying(false); setModal(null); }} className="rounded-full bg-muted px-3 py-1 text-xs">⏻</button>
                 </div>
               </div>
               <div className={big ? "w-full" : "order-1 h-10 w-16 shrink-0 overflow-hidden rounded-full"}>
                 {src
-                  ? <iframe src={src} className={big ? "aspect-video w-full rounded-xl" : "h-full w-full"} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title="Playlist" />
+                  ? <iframe ref={playerRef} onLoad={listenToPlayer} src={src} className={big ? "aspect-video w-full rounded-xl" : "h-full w-full"} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title="Playlist" />
                   : <p className="text-sm">{radio.sinPlaylist}</p>}
               </div>
             </div>
@@ -205,6 +221,7 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
       </Modal>
 
       <Cuaderno open={modal === "cuaderno"} onClose={() => setModal(null)} fichasOk={fichasOk} />
+      {cajon !== null && <Recuerdos key={cajon} cajon={cajon} onClose={() => setCajon(null)} />}
     </main>
   );
 }
@@ -242,12 +259,13 @@ function HiloRojo({ onPull }: { onPull: () => void }) {
 }
 
 function Cuacfesionario({ state, goTo, reset, onBrioche }: { state: GameState; goTo: (i: number) => void; reset: () => void; onBrioche: () => void }) {
-  const paso = pasos[Math.min(state.step, pasos.length - 1)]!;
+  const paso = pasos[Math.min(state.step, pasos.length - 1)] ?? pasos[0];
   const next = pasos[state.step + 1];
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
   const [party, setParty] = useState(0);
   const [open, setOpen] = useState(false);
+  if (!paso) return null;
 
   const advance = (i: number) => { goTo(i); setParty((p) => p + 1); setError(""); setValue(""); };
   const submit = (e: React.FormEvent) => {
