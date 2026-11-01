@@ -152,3 +152,15 @@
 @utility animate-float-up { animation: float-up 1.4s ease-out forwards; }
 @utility animate-shine { animation: shine 1.6s ease-in-out 3; }
 @utility animate-hint { animation: hint 3s ease-in-out infinite; }
+
+@keyframes radio-note {
+  0% { opacity: 0; transform: translate(0, 0) rotate(-10deg); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--note-drift, 12px), -65px) rotate(18deg); }
+}
+.radio-note { animation: radio-note 2.8s ease-out infinite; }
+.radio-note:nth-child(2) { animation-delay: .9s; --note-drift: -18px; }
+.radio-note:nth-child(3) { animation-delay: 1.8s; --note-drift: 24px; }
+@media (prefers-reduced-motion: reduce) {
+  .radio-note { animation: none; opacity: 1; }
+}
