@@ -115,15 +115,15 @@ export function Workshop({ state, goTo, find, markSeen, reset }: Props) {
         <Spot label={cuaderno.titulo} box="left-[43%] top-[64%] w-[36%] h-[9%]" onClick={() => setModal("cuaderno")} tag={cuaderno.titulo} />
 
         {/* hilo rojo colgando de la balda */}
-        <div className="absolute left-[71%] top-[16.5%]"><HiloRojo onPull={pullThread} /></div>
+        <div className="absolute left-[80%] top-[16.5%]"><HiloRojo onPull={pullThread} /></div>
 
         {/* tablón: post-its y fotos sobre el pegboard */}
-        <div className="absolute left-[43%] top-[22%] z-[5] grid w-[24%] grid-cols-1 gap-3">
+        <div className="absolute left-[43%] top-[22%] z-[5] grid w-[23%] grid-cols-1 gap-2">
           {visibleItems.map((t, i) => (
             <Button key={t.id} aria-label={t.tipo === "postit" ? "Nota del tablón" : "Foto del tablón"} onClick={() => { setItem(t); setModal("item"); }}
-              className={`relative rounded-sm p-1 shadow-soft ${t.tipo === "postit" ? "bg-glow" : "aspect-[4/5] bg-card"} ${shining.includes(t.id) ? "animate-shine" : ""}`}
+              className={`relative rounded-sm p-1 shadow-soft ${t.tipo === "postit" ? "bg-glow" : "aspect-square bg-card"} ${shining.includes(t.id) ? "animate-shine" : ""}`}
               style={{ transform: `rotate(${((i * 37) % 9) - 4}deg)` }}>
-              {t.tipo === "postit" ? <><span className="tape absolute -top-2 left-1/2 h-3 w-10 -translate-x-1/2 rotate-[3deg]" /><p className="font-hand px-1 py-2 text-sm leading-tight">{t.texto}</p></> : <><span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-thread shadow" /><Img src={t.imagen || t.texto} className="h-full w-full !p-0 text-[6px]" /></>}
+              {t.tipo === "postit" ? <><span className="tape absolute -top-2 left-1/2 h-3 w-10 -translate-x-1/2 rotate-[3deg]" /><p className="font-hand px-1 py-1 text-xs leading-tight">{t.texto}</p></> : <><span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-thread shadow" /><Img src={t.imagen || t.texto} className="h-full w-full !p-0 text-[6px]" /></>}
             </Button>
           ))}
         </div>

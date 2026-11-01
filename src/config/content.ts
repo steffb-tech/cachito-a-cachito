@@ -327,7 +327,6 @@ export const cuadroDecorativo = { imagen: laminaCapadocia.url, descripcion: "Acu
 
 // ---------- SECRETOS ----------
 export const secretos = {
-  cajones: ["[SECRETO_CAJON_1]", "[SECRETO_CAJON_2]", "[SECRETO_CAJON_3]"],
   botes: ["[SECRETO_BOTE_1]", "[SECRETO_BOTE_2]", "[SECRETO_BOTE_3]"],
   flexo: "[SECRETO_FLEXO]",
   guirnalda: "[SECRETO_GUIRNALDA]",
