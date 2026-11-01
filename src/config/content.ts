@@ -9,6 +9,14 @@
 
 // [AVATAR_PATITO] → sustituye este archivo por tu imagen (misma ruta) o cambia el import.
 import patitoImg from "@/assets/patito.png";
+import fotoRecuerdo from "@/assets/foto-recuerdo.png.asset.json";
+import laminaCapadocia from "@/assets/lamina-capadocia.png.asset.json";
+import bingo from "@/assets/recuerdo-bingo.jpg";
+import guatafac from "@/assets/recuerdo-guatafac.jpg";
+import shakira from "@/assets/recuerdo-shakira.jpg";
+import ticket from "@/assets/recuerdo-ticket.jpg";
+import mapas from "@/assets/recuerdo-mapas.jpg";
+import sanFrutos from "@/assets/recuerdo-san-frutos.jpg";
 
 export const avatarPatito: string = patitoImg;
 
@@ -291,19 +299,31 @@ export type ItemTablon = {
 };
 
 export const tablon: ItemTablon[] = [
-  { id: "p1", tipo: "postit", texto: "[POSTIT_1]", unlockAtStep: "1" },
-  { id: "f1", tipo: "foto", texto: "[FOTO_1]", unlockAtStep: "1" },
-  { id: "p2", tipo: "postit", texto: "[POSTIT_2]", unlockAtStep: "vacaciones" },
-  { id: "f2", tipo: "foto", texto: "[FOTO_2]", unlockAtStep: "2" },
-  { id: "p3", tipo: "postit", texto: "[POSTIT_3]", unlockAtStep: "3" },
-  { id: "f3", tipo: "foto", texto: "[FOTO_3]", unlockAtStep: "4" },
-  { id: "p4", tipo: "postit", texto: "[POSTIT_4]", unlockAtStep: "5" },
-  { id: "f4", tipo: "foto", texto: "[FOTO_4]", unlockAtStep: "6" },
-  { id: "p5", tipo: "postit", texto: "[POSTIT_5]", unlockAtStep: "7" },
-  { id: "f5", tipo: "foto", texto: "[FOTO_5]", unlockAtStep: "7" },
-  { id: "p6", tipo: "postit", texto: "[POSTIT_6]", unlockAtStep: "8" },
-  { id: "f6", tipo: "foto", texto: "[FOTO_6]", unlockAtStep: "8" },
+  { id: "p1", tipo: "postit", texto: "¿Qué le apetece hoy al pequeño Cachito? Empieza por ahí.", unlockAtStep: "1" },
+  { id: "f1", tipo: "foto", texto: "Patito y Cachito", imagen: fotoRecuerdo.url, unlockAtStep: "1" },
 ];
+
+export function itemsTablonEnPaso(step: number) {
+  const unlocked = tablon.filter((t) => pasos.findIndex((p) => p.id === t.unlockAtStep) <= step);
+  return [unlocked.find((t) => t.tipo === "postit"), unlocked.find((t) => t.tipo === "foto")].filter((t): t is ItemTablon => Boolean(t));
+}
+
+export type Recuerdo = { id: string; nombre: string; imagen: string; nota: string; reverso?: { prefijo: string; tachado: string }; };
+export const cajonesRecuerdos: Recuerdo[][] = [
+  [
+    { id: "bingo", nombre: "Rotulador Bingo Canoe", imagen: bingo, nota: "Prueba de que la suerte existe. Te tengo a ti." },
+    { id: "guatafac", nombre: "Carta GUATAFAC", imagen: guatafac, nota: "Partida pendiente. No creas que se me ha olvidado quién iba ganando.", reverso: { prefijo: "Patito 3 – Cachito", tachado: "2" } },
+  ],
+  [
+    { id: "shakira", nombre: "Pulsera SHAKIRA", imagen: shakira, nota: "Últimamente nos gusta bailar bajo la lluvia." },
+    { id: "ticket", nombre: "Ticket de Dunkin' Donuts", imagen: ticket, nota: "La tinta se borra con el tiempo. Lo nuestro, no." },
+  ],
+  [
+    { id: "mapas", nombre: "Mapas de Alicante, Salamanca y Segovia", imagen: mapas, nota: "Por todas las aventuras que hemos vivido juntos… y las que están por llegar." },
+    { id: "san-frutos", nombre: "Estampita de San Frutos", imagen: sanFrutos, nota: "Por todas las aventuras que hemos vivido juntos… y las que están por llegar." },
+  ],
+];
+export const cuadroDecorativo = { imagen: laminaCapadocia.url, descripcion: "Acuarela de Capadocia" };
 
 // ---------- SECRETOS ----------
 export const secretos = {
@@ -312,11 +332,13 @@ export const secretos = {
   flexo: "[SECRETO_FLEXO]",
   guirnalda: "[SECRETO_GUIRNALDA]",
   brioche: "[SECRETO_BRIOCHE]",
-  cuadro: "[SECRETO_CUADRO]",
-  // Lámina botánica del cuadro y foto que la sustituye al llegar al paso 8
-  laminaBotanica: "", // vacío = lámina ilustrada por defecto
-  fotoFinal: "[FOTO_FINAL]",
 };
+
+export const secretIds = [
+  ...cajonesRecuerdos.map((_, i) => `cajon${i}`),
+  ...secretos.botes.map((_, i) => `bote${i}`),
+  "flexo", "guirnalda", "brioche",
+];
 
 // ---------- RADIO ----------
 export const radio = {

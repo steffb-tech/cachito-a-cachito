@@ -1,6 +1,10 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, type ReactNode, type ButtonHTMLAttributes } from "react";
 import { X } from "lucide-react";
 import { avatarPatito, general } from "@/config/content";
+
+export function Button({ className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button type="button" className={`tappable focus-visible:outline-2 focus-visible:outline-ring ${className}`} {...props} />;
+}
 
 export function Modal({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title?: string; children: ReactNode; wide?: boolean }) {
   if (!open) return null;
